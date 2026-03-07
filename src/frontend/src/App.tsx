@@ -938,7 +938,7 @@ const memoryCards = [
     label: "our adventures 🗺️",
     rotation: "1deg",
     src: "/assets/uploads/IMG_20260223_211205-4.jpg",
-    objectPosition: "center top",
+    objectPosition: "center center",
   },
   {
     label: "cozy moments 🕯️",
@@ -1451,42 +1451,22 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
         }}
       />
 
-      {/* Content — z-index 10 */}
+      {/* Content — z-index 10, mirroring the Women's Day hero layout */}
       <div className="relative z-10 flex flex-col items-center text-center px-5 max-w-[420px] mx-auto w-full">
-        {/* Soft badge */}
+        {/* Hero photo in Polaroid frame — same position as Women's Day hero photo */}
         <div
-          className="slide-el inline-flex items-center gap-2 px-4 py-1.5 mb-3 rounded-full"
+          className="slide-el photo-float-anim mb-2"
           style={
             {
-              border: "1px solid oklch(0.65 0.18 22 / 0.5)",
-              background: "oklch(0.18 0.1 15 / 0.55)",
-              backdropFilter: "blur(10px)",
+              filter: "drop-shadow(0 10px 30px oklch(0.15 0.1 15 / 0.85))",
               "--delay": "0ms",
-            } as React.CSSProperties
-          }
-        >
-          <span
-            className="crimson-pro tracking-[0.18em] uppercase"
-            style={{ color: "oklch(0.78 0.15 35)", fontSize: 11 }}
-          >
-            🌹 March 11th · Your Birthday 🌹
-          </span>
-        </div>
-
-        {/* Hero photo in Polaroid frame */}
-        <div
-          className="slide-el photo-float-anim mb-3"
-          style={
-            {
-              filter: "drop-shadow(0 12px 36px oklch(0.2 0.1 15 / 0.8))",
-              "--delay": "80ms",
             } as React.CSSProperties
           }
         >
           <div
             className="polaroid-card bday-polaroid"
             style={{
-              width: "clamp(160px, 48vw, 210px)",
+              width: "clamp(155px, 46vw, 200px)",
               background: "white",
             }}
           >
@@ -1497,7 +1477,7 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
               decoding="async"
               style={{
                 width: "100%",
-                height: "clamp(200px, 60vw, 260px)",
+                height: "clamp(195px, 58vw, 250px)",
                 objectFit: "cover",
                 objectPosition: "center top",
                 display: "block",
@@ -1517,43 +1497,38 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
           </div>
         </div>
 
-        {/* Happy Birthday — warm rose-gold shimmer */}
+        {/* "Happy Birthday baby" — sits directly under the photo like Women's Day hero */}
         <h1
-          className="slide-el playfair font-black mb-1"
+          className="slide-el playfair font-black mb-1 shimmer-heading"
           style={
             {
-              fontSize: "clamp(2.2rem, 8vw, 3.4rem)",
-              background:
-                "linear-gradient(135deg, oklch(0.92 0.1 48) 0%, oklch(0.82 0.2 30) 30%, oklch(0.88 0.16 18) 60%, oklch(0.92 0.1 48) 100%)",
-              backgroundSize: "300% auto",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
+              fontSize: "clamp(2rem, 7.5vw, 3.2rem)",
+              color: "oklch(0.92 0.14 48)",
+              textShadow:
+                "0 0 20px oklch(0.75 0.2 30 / 0.7), 0 0 40px oklch(0.6 0.18 22 / 0.45)",
               letterSpacing: "-0.01em",
               lineHeight: 1.1,
-              animation: "gradientShift 6s linear infinite",
-              filter: "drop-shadow(0 0 18px oklch(0.65 0.2 30 / 0.6))",
-              "--delay": "160ms",
+              "--delay": "80ms",
             } as React.CSSProperties
           }
         >
-          Happy Birthday
+          Happy Birthday baby 🌹
         </h1>
 
         {/* Name — tender italic glow */}
         <h2
-          className="slide-el playfair italic mb-2 glow-text-red"
+          className="slide-el playfair italic mb-2"
           style={
             {
-              fontSize: "clamp(1.25rem, 5vw, 1.9rem)",
-              color: "oklch(0.9 0.06 20)",
+              fontSize: "clamp(1.2rem, 4.8vw, 1.85rem)",
+              color: "oklch(0.88 0.1 22)",
               textShadow:
                 "0 0 22px oklch(0.6 0.2 22 / 0.7), 0 0 44px oklch(0.45 0.16 18 / 0.45)",
-              "--delay": "240ms",
+              "--delay": "160ms",
             } as React.CSSProperties
           }
         >
-          My baby Rasshu Gullaw
+          My Rasshu Gullaw 🌹
         </h2>
 
         {/* Love message — floating breath */}
@@ -1561,11 +1536,11 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
           className="slide-el crimson-pro italic float-anim mb-3"
           style={
             {
-              fontSize: "clamp(1.15rem, 4.8vw, 1.55rem)",
+              fontSize: "clamp(1.1rem, 4.5vw, 1.5rem)",
               color: "oklch(0.88 0.1 28)",
               textShadow:
                 "0 0 16px oklch(0.6 0.2 22 / 0.65), 0 0 32px oklch(0.45 0.15 18 / 0.4)",
-              "--delay": "320ms",
+              "--delay": "240ms",
             } as React.CSSProperties
           }
         >
@@ -1578,7 +1553,7 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
           style={
             {
               fontSize: "1.5rem",
-              "--delay": "400ms",
+              "--delay": "320ms",
             } as React.CSSProperties
           }
         >
@@ -1602,223 +1577,6 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-// ===================== LOTUS GARDEN =====================
-
-const LOTUS_COUNT = 25;
-
-function calcBloomedCount() {
-  const now = new Date();
-  const secondsIntoDay =
-    now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-  const secondsPerLotus = 86400 / LOTUS_COUNT;
-  return Math.floor(secondsIntoDay / secondsPerLotus);
-}
-
-// Pre-compute stable positions so they don't change on re-render
-const LOTUS_POSITIONS = Array.from({ length: LOTUS_COUNT }, (_, i) => ({
-  x: (i / (LOTUS_COUNT - 1)) * 94 + 3,
-  bottomOffset: 8 + ((i * 7 + i * i * 3) % 14),
-  scale: 0.55 + ((i * 13 + i * i * 5) % 10) * 0.045,
-  id: i,
-}));
-
-// 25 lotus flowers that bloom spread across the day (each blooms in order over 24h)
-// Each lotus has 3 states: closed bud → half-open → fully bloomed
-function LotusGarden() {
-  const [bloomedCount, setBloomedCount] = useState(calcBloomedCount);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setBloomedCount(calcBloomedCount());
-    }, 10000); // check every 10s
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div
-      className="absolute bottom-0 left-0 right-0 pointer-events-none"
-      style={{ zIndex: 5, height: "18vh" }}
-    >
-      {LOTUS_POSITIONS.map((pos) => {
-        const i = pos.id;
-        const isFullyBloomed = i < bloomedCount;
-        const isHalfBloomed = i === bloomedCount; // next one blooming
-
-        return (
-          <div
-            key={pos.id}
-            className="absolute flex flex-col items-center"
-            style={{
-              left: `${pos.x}%`,
-              bottom: `${pos.bottomOffset}px`,
-              transform: `translateX(-50%) scale(${pos.scale})`,
-              transformOrigin: "bottom center",
-              transition: "all 2.5s cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
-          >
-            {/* Lotus SVG */}
-            <svg
-              width="32"
-              height="34"
-              viewBox="0 0 32 34"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              role="img"
-              aria-label={`lotus ${i + 1}`}
-              style={{
-                filter: isFullyBloomed
-                  ? "drop-shadow(0 0 6px oklch(0.7 0.2 0 / 0.8))"
-                  : isHalfBloomed
-                    ? "drop-shadow(0 0 3px oklch(0.6 0.18 0 / 0.5))"
-                    : "none",
-                transition: "filter 2s ease",
-              }}
-            >
-              {/* Stem */}
-              <path
-                d="M16 34 C16 34 15 28 16 22"
-                stroke={
-                  isFullyBloomed
-                    ? "oklch(0.45 0.18 140)"
-                    : "oklch(0.35 0.12 140)"
-                }
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              {/* Leaves on stem */}
-              <path
-                d="M16 28 C12 26 10 23 12 21 C14 23 15 25 16 28Z"
-                fill={
-                  isFullyBloomed
-                    ? "oklch(0.42 0.2 140 / 0.8)"
-                    : "oklch(0.32 0.14 140 / 0.6)"
-                }
-              />
-              <path
-                d="M16 26 C20 24 22 21 20 19 C18 21 17 23 16 26Z"
-                fill={
-                  isFullyBloomed
-                    ? "oklch(0.42 0.2 140 / 0.8)"
-                    : "oklch(0.32 0.14 140 / 0.6)"
-                }
-              />
-
-              {/* Outer petals — closed bud state */}
-              {!isFullyBloomed && !isHalfBloomed && (
-                <>
-                  <path
-                    d="M16 22 C14 18 13 14 16 10 C19 14 18 18 16 22Z"
-                    fill="oklch(0.55 0.15 0 / 0.6)"
-                  />
-                  <path
-                    d="M16 22 C12 20 9 17 10 13 C13 15 15 18 16 22Z"
-                    fill="oklch(0.52 0.14 5 / 0.5)"
-                  />
-                  <path
-                    d="M16 22 C20 20 23 17 22 13 C19 15 17 18 16 22Z"
-                    fill="oklch(0.52 0.14 5 / 0.5)"
-                  />
-                </>
-              )}
-
-              {/* Half-open petals */}
-              {isHalfBloomed && (
-                <>
-                  <path
-                    d="M16 22 C14 16 12 10 16 4 C20 10 18 16 16 22Z"
-                    fill="oklch(0.72 0.2 355 / 0.7)"
-                  />
-                  <path
-                    d="M16 22 C10 18 6 14 8 7 C12 12 14 17 16 22Z"
-                    fill="oklch(0.68 0.18 5 / 0.6)"
-                  />
-                  <path
-                    d="M16 22 C22 18 26 14 24 7 C20 12 18 17 16 22Z"
-                    fill="oklch(0.68 0.18 5 / 0.6)"
-                  />
-                  <path
-                    d="M16 22 C8 20 4 16 5 10 C10 14 13 18 16 22Z"
-                    fill="oklch(0.75 0.16 350 / 0.5)"
-                  />
-                  <path
-                    d="M16 22 C24 20 28 16 27 10 C22 14 19 18 16 22Z"
-                    fill="oklch(0.75 0.16 350 / 0.5)"
-                  />
-                  {/* Center */}
-                  <circle
-                    cx="16"
-                    cy="18"
-                    r="3"
-                    fill="oklch(0.88 0.15 55 / 0.9)"
-                  />
-                </>
-              )}
-
-              {/* Fully bloomed petals */}
-              {isFullyBloomed && (
-                <>
-                  {/* Back outer petals */}
-                  <path
-                    d="M16 21 C6 16 2 8 7 2 C12 8 14 15 16 21Z"
-                    fill="oklch(0.78 0.18 355 / 0.55)"
-                  />
-                  <path
-                    d="M16 21 C26 16 30 8 25 2 C20 8 18 15 16 21Z"
-                    fill="oklch(0.78 0.18 355 / 0.55)"
-                  />
-                  <path
-                    d="M16 21 C14 10 12 3 16 0 C20 3 18 10 16 21Z"
-                    fill="oklch(0.82 0.2 0 / 0.65)"
-                  />
-                  {/* Mid petals */}
-                  <path
-                    d="M16 21 C7 18 3 12 6 6 C11 11 14 16 16 21Z"
-                    fill="oklch(0.85 0.22 358 / 0.75)"
-                  />
-                  <path
-                    d="M16 21 C25 18 29 12 26 6 C21 11 18 16 16 21Z"
-                    fill="oklch(0.85 0.22 358 / 0.75)"
-                  />
-                  {/* Front inner petals */}
-                  <path
-                    d="M16 21 C10 17 9 11 12 7 C14 12 15 17 16 21Z"
-                    fill="oklch(0.90 0.18 5 / 0.85)"
-                  />
-                  <path
-                    d="M16 21 C22 17 23 11 20 7 C18 12 17 17 16 21Z"
-                    fill="oklch(0.90 0.18 5 / 0.85)"
-                  />
-                  <path
-                    d="M16 21 C15 14 14 8 16 5 C18 8 17 14 16 21Z"
-                    fill="oklch(0.94 0.12 10 / 0.9)"
-                  />
-                  {/* Golden center */}
-                  <circle cx="16" cy="17" r="3.5" fill="oklch(0.92 0.18 55)" />
-                  <circle cx="16" cy="17" r="2" fill="oklch(0.88 0.22 50)" />
-                  {/* Stamens */}
-                  <circle
-                    cx="14.5"
-                    cy="15.5"
-                    r="0.8"
-                    fill="oklch(0.75 0.2 50)"
-                  />
-                  <circle
-                    cx="17.5"
-                    cy="15.5"
-                    r="0.8"
-                    fill="oklch(0.75 0.2 50)"
-                  />
-                  <circle cx="16" cy="14.5" r="0.8" fill="oklch(0.75 0.2 50)" />
-                </>
-              )}
-            </svg>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -1962,7 +1720,7 @@ function CountdownSlide({
       <div
         data-ocid="countdown.panel"
         className="relative z-10 flex flex-col items-center text-center px-5 max-w-[420px] mx-auto w-full"
-        style={{ paddingBottom: "22vh" }}
+        style={{ paddingBottom: "1rem" }}
       >
         {/* Badge – badge-pulse */}
         <div
@@ -2118,9 +1876,6 @@ function CountdownSlide({
           ◆ the moment draws near ◆
         </p>
       </div>
-
-      {/* Lotus Garden — 25 lotuses blooming through the day */}
-      <LotusGarden />
 
       {/* Footer */}
       <div
