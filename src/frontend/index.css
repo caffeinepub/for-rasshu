@@ -130,11 +130,12 @@
 }
 
 .gradient-text-warm {
-  background: linear-gradient(135deg, oklch(0.85 0.16 50), oklch(0.75 0.2 28), oklch(0.85 0.14 55));
-  background-size: 200% auto;
+  background: linear-gradient(135deg, oklch(0.85 0.16 50), oklch(0.75 0.2 28), oklch(0.85 0.14 55), oklch(0.78 0.22 30), oklch(0.85 0.16 50));
+  background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: gradientShift 8s linear infinite;
 }
 
 /* ===== POLAROID CARD ===== */
@@ -174,19 +175,19 @@
 }
 
 .slide-enter-right {
-  animation: slideEnterRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideEnterRight 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .slide-exit-left {
-  animation: slideExitLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideExitLeft 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .slide-enter-left {
-  animation: slideEnterLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideEnterLeft 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .slide-exit-right {
-  animation: slideExitRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideExitRight 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 /* ===== ELEMENT ENTRANCE ANIMATION ===== */
@@ -194,7 +195,7 @@
 @keyframes elEnter {
   from {
     opacity: 0;
-    transform: translateY(24px) scale(0.97);
+    transform: translateY(16px) scale(0.97);
   }
   to {
     opacity: 1;
@@ -204,11 +205,45 @@
 
 .slide-el {
   opacity: 0;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .slide-active .slide-el {
-  animation: elEnter 0.5s ease forwards;
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   animation-delay: var(--delay, 0ms);
+}
+
+/* Gradient text shimmer uses filter glow instead of text-shadow (text-shadow doesn't work with background-clip text) */
+.gradient-text-warm.shimmer-heading {
+  animation: gradientShift 8s linear infinite, gradientGlow 5s ease-in-out infinite;
+}
+
+@keyframes gradientGlow {
+  0%,  100% { filter: drop-shadow(0 0 6px oklch(0.65 0.22 28 / 0.3)); }
+  50%        { filter: drop-shadow(0 0 18px oklch(0.72 0.25 30 / 0.7)); }
+}
+
+/* After entrance, let continuous animations run without overriding opacity */
+.slide-active .slide-el.float-anim {
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, floatY 7s ease-in-out calc(var(--delay, 0ms) + 1.3s) infinite;
+}
+
+.slide-active .slide-el.breath-anim {
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, scaleBreath 7s ease-in-out calc(var(--delay, 0ms) + 1.3s) infinite;
+}
+
+.slide-active .slide-el.rotate-float {
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, rotateFloat 7s ease-in-out calc(var(--delay, 0ms) + 1.3s) infinite;
+}
+
+.slide-active .slide-el.badge-pulse {
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, badgePulse 6s ease-in-out calc(var(--delay, 0ms) + 1.3s) infinite;
+}
+
+.slide-active .slide-el.photo-float-anim {
+  animation: elEnter 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards, photoFloat 10s ease-in-out calc(var(--delay, 0ms) + 1.3s) infinite;
 }
 
 /* ===== BLOB DRIFT ANIMATIONS ===== */
@@ -238,11 +273,13 @@
 /* ===== PARTICLE ANIMATIONS ===== */
 
 @keyframes heartSway {
-  0%   { transform: translateY(0) translateX(0)    rotate(0deg);   opacity: 0;   }
-  10%  { opacity: 1; }
-  50%  { transform: translateY(-55vh) translateX(25px)  rotate(20deg);  }
-  90%  { opacity: 0.5; }
-  100% { transform: translateY(-110vh) translateX(-15px) rotate(-15deg); opacity: 0; }
+  0%   { transform: translateY(0)      translateX(0px)   rotate(0deg);   opacity: 0;   }
+  8%   { opacity: 0.85; }
+  30%  { transform: translateY(-28vh)  translateX(18px)  rotate(12deg);  opacity: 0.75; }
+  55%  { transform: translateY(-55vh)  translateX(-10px) rotate(-8deg);  opacity: 0.55; }
+  75%  { transform: translateY(-78vh)  translateX(14px)  rotate(10deg);  opacity: 0.3; }
+  90%  { transform: translateY(-96vh)  translateX(-6px)  rotate(-5deg);  opacity: 0.1; }
+  100% { transform: translateY(-115vh) translateX(0px)   rotate(0deg);   opacity: 0;   }
 }
 
 @keyframes sparkleRotate {
@@ -273,10 +310,172 @@
 /* ===== NEXT BUTTON PULSE ===== */
 
 @keyframes nextBtnPulse {
-  0%,  100% { transform: translateX(-50%) scale(1);    }
-  50%        { transform: translateX(-50%) scale(1.04); }
+  0%,  100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 4px 24px oklch(0.4 0.2 22 / 0.4);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.03);
+    box-shadow: 0 4px 40px oklch(0.5 0.22 25 / 0.7), 0 0 24px oklch(0.55 0.2 28 / 0.4);
+  }
 }
 
 .next-btn-pulse {
-  animation: nextBtnPulse 2s ease-in-out infinite;
+  animation: nextBtnPulse 4s ease-in-out infinite;
+}
+
+/* ===== NEW CONTINUOUS ANIMATION KEYFRAMES ===== */
+
+/* Gentle vertical float */
+@keyframes floatY {
+  0%,  100% { transform: translateY(0); }
+  50%        { transform: translateY(-5px); }
+}
+
+/* Text shimmer / glow pulse */
+@keyframes shimmer {
+  0%,  100% { text-shadow: 0 0 10px oklch(0.55 0.22 25 / 0.4), 0 0 20px oklch(0.45 0.2 22 / 0.2); }
+  50%        { text-shadow: 0 0 30px oklch(0.65 0.25 28 / 0.8), 0 0 60px oklch(0.5 0.22 22 / 0.5), 0 0 80px oklch(0.55 0.18 30 / 0.3); }
+}
+
+/* Scale breathe */
+@keyframes scaleBreath {
+  0%,  100% { transform: scale(1); }
+  50%        { transform: scale(1.025); }
+}
+
+/* Subtle fade pulse */
+@keyframes fadeInOut {
+  0%,  100% { opacity: 0.3; }
+  50%        { opacity: 0.9; }
+}
+
+/* Rotate and float */
+@keyframes rotateFloat {
+  0%   { transform: rotate(0deg) translateY(0); }
+  50%  { transform: rotate(5deg) translateY(-6px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+/* Gradient background position shift */
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Polaroid card gentle wiggle */
+@keyframes polaroidWiggle {
+  0%,  100% { transform: rotate(var(--rot, 0deg)); }
+  50%        { transform: rotate(calc(var(--rot, 0deg) + 2deg)) scale(1.01); }
+}
+
+/* Countdown box glow pulse */
+@keyframes countdownGlow {
+  0%,  100% { box-shadow: 0 4px 24px oklch(0.5 0.22 22 / 0.2), inset 0 1px 0 oklch(1 0 0 / 0.05); }
+  50%        { box-shadow: 0 4px 40px oklch(0.6 0.25 25 / 0.5), 0 0 30px oklch(0.5 0.22 22 / 0.35), inset 0 1px 0 oklch(1 0 0 / 0.08); }
+}
+
+/* Heartbeat */
+@keyframes heartbeat {
+  0%,  100% { transform: scale(1); }
+  14%        { transform: scale(1.15); }
+  28%        { transform: scale(1); }
+  42%        { transform: scale(1.1); }
+  70%        { transform: scale(1); }
+}
+
+/* Badge pulse */
+@keyframes badgePulse {
+  0%,  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 oklch(0.5 0.18 22 / 0);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 18px 4px oklch(0.5 0.2 22 / 0.4);
+  }
+}
+
+/* Orb scale pulse */
+@keyframes orbPulse {
+  0%,  100% { transform: scale(1); opacity: 0.15; }
+  50%        { transform: scale(1.2); opacity: 0.3; }
+}
+
+/* Photo frame float with slight rotate */
+@keyframes photoFloat {
+  0%,  100% { transform: rotate(-2deg) translateY(0); }
+  50%        { transform: rotate(-1deg) translateY(-5px); }
+}
+
+/* ===== CONTINUOUS ANIMATION UTILITY CLASSES ===== */
+
+.float-anim {
+  animation: floatY 7s ease-in-out infinite;
+}
+
+.shimmer-heading {
+  animation: shimmer 5s ease-in-out infinite;
+}
+
+.breath-anim {
+  animation: scaleBreath 7s ease-in-out infinite;
+}
+
+.rotate-float {
+  animation: rotateFloat 7s ease-in-out infinite;
+}
+
+.polaroid-anim {
+  animation: polaroidWiggle 10s ease-in-out infinite;
+}
+
+.countdown-box-glow {
+  animation: countdownGlow 5s ease-in-out infinite;
+}
+
+.heartbeat-anim {
+  animation: heartbeat 3.5s ease-in-out infinite;
+}
+
+.badge-pulse {
+  animation: badgePulse 6s ease-in-out infinite;
+}
+
+.photo-float-anim {
+  animation: photoFloat 10s ease-in-out infinite;
+}
+
+/* ===== TAP TO REVEAL ===== */
+
+.reveal-hidden {
+  cursor: pointer;
+}
+
+@keyframes revealPop {
+  0%   { transform: scale(0.85) rotate(-4deg); opacity: 0; }
+  60%  { transform: scale(1.06) rotate(1deg);  opacity: 1; }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+
+.reveal-show {
+  animation: revealPop 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ===== SECRET BUTTON ===== */
+
+@keyframes secretBtnPulse {
+  0%,  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 32px oklch(0.55 0.25 300 / 0.5), 0 0 60px oklch(0.45 0.2 280 / 0.25);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 4px 50px oklch(0.65 0.28 300 / 0.75), 0 0 80px oklch(0.55 0.25 280 / 0.4);
+  }
+}
+
+.secret-reveal-btn {
+  animation: secretBtnPulse 3.5s ease-in-out infinite;
 }
