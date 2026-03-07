@@ -96,10 +96,42 @@ function generateOrbParticles(
   }));
 }
 
+function generateStarParticles(count: number): Particle[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    // Random position across the whole screen for galaxy starfield
+    top: `${Math.random() * 100}%`,
+    size: `${1 + Math.random() * 3}px`,
+    duration: `${4 + Math.random() * 8}s`,
+    delay: `-${Math.random() * 10}s`,
+    opacity: `${0.3 + Math.random() * 0.6}`,
+  }));
+}
+
 // Pre-generate stable particle sets (reduced for performance)
 const heartParticles = generateHeartParticles(14);
 const sparkleParticles = generateSparkleParticles(14);
 const orbParticles = generateOrbParticles(10);
+
+// Birthday-specific particle sets
+const bdayStarParticles = generateStarParticles(50);
+const bdayHeartParticles = generateHeartParticles(12);
+const bdaySparkleParticles = generateSparkleParticles(16);
+
+// Extra rose-gold floating petals for birthday hero
+function generatePetalParticles(count: number): Particle[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${-10 + Math.random() * 20}%`,
+    size: `${14 + Math.random() * 12}px`,
+    duration: `${14 + Math.random() * 10}s`,
+    delay: `-${(i / count) * 20 + Math.random() * 5}s`,
+    opacity: `${0.35 + Math.random() * 0.4}`,
+  }));
+}
+const bdayPetalParticles = generatePetalParticles(10);
 
 // ===================== POLAROID CARD =====================
 
@@ -148,8 +180,38 @@ function PolaroidCard({
 
 function AnimatedBlobs({
   variant,
-}: { variant: "dark" | "peach" | "blush" | "black" | "secret" }) {
+}: { variant: "dark" | "peach" | "blush" | "black" | "secret" | "birthday" }) {
   const configs = {
+    birthday: [
+      {
+        color: "oklch(0.35 0.2 22 / 0.55)",
+        size: "75vw",
+        top: "-25%",
+        left: "-20%",
+        anim: "blobDrift1 28s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.28 0.18 355 / 0.45)",
+        size: "65vw",
+        top: "35%",
+        left: "45%",
+        anim: "blobDrift2 22s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.42 0.22 30 / 0.4)",
+        size: "60vw",
+        top: "60%",
+        left: "-15%",
+        anim: "blobDrift3 32s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.20 0.1 10 / 0.5)",
+        size: "80vw",
+        top: "-5%",
+        left: "25%",
+        anim: "blobDrift4 25s ease-in-out infinite",
+      },
+    ],
     secret: [
       {
         color: "oklch(0.38 0.2 300 / 0.4)",
@@ -1004,6 +1066,763 @@ function MemoriesSlide({ isActive }: { isActive: boolean }) {
   );
 }
 
+// ===================== BIRTHDAY TRANSITION OVERLAY =====================
+
+function BirthdayTransitionOverlay({
+  onTransitionDone,
+}: {
+  onTransitionDone: () => void;
+}) {
+  const [visible, setVisible] = useState(true);
+  const doneFired = useRef(false);
+
+  const triggerDone = useCallback(() => {
+    if (doneFired.current) return;
+    doneFired.current = true;
+    setVisible(false);
+    setTimeout(() => {
+      onTransitionDone();
+    }, 800);
+  }, [onTransitionDone]);
+
+  // Auto-trigger after 3s
+  useEffect(() => {
+    const t = setTimeout(triggerDone, 3000);
+    return () => clearTimeout(t);
+  }, [triggerDone]);
+
+  const birthdayOverlayEmojis = [
+    { emoji: "🎂", delay: "0s", key: "cake" },
+    { emoji: "💖", delay: "0.15s", key: "sparkleheart" },
+    { emoji: "🎉", delay: "0.3s", key: "party" },
+    { emoji: "🌸", delay: "0.45s", key: "blossom" },
+    { emoji: "✨", delay: "0.6s", key: "sparkle" },
+  ];
+
+  return (
+    <button
+      type="button"
+      onClick={triggerDone}
+      onTouchEnd={triggerDone}
+      aria-label="Birthday transition – tap to continue"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 100,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background:
+          "linear-gradient(160deg, oklch(0.10 0.07 10) 0%, oklch(0.14 0.09 15) 50%, oklch(0.09 0.05 355) 100%)",
+        opacity: visible ? 1 : 0,
+        transition: "opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: "pointer",
+        overflow: "hidden",
+        border: "none",
+        padding: 0,
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      {/* Deep nebula blobs — z-index 0, behind everything */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <AnimatedBlobs variant="birthday" />
+      </div>
+
+      {/* Galaxy starfield — fine dots twinkling in place, z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdayStarParticles.map((p) => (
+          <div
+            key={`star-overlay-${p.id}`}
+            className="absolute rounded-full"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              background:
+                p.id % 4 === 0
+                  ? "oklch(0.92 0.12 55)"
+                  : p.id % 4 === 1
+                    ? "oklch(0.88 0.1 30)"
+                    : "oklch(0.95 0.05 40)",
+              boxShadow: `0 0 ${Number.parseFloat(p.size) * 2.5}px ${p.id % 4 === 0 ? "oklch(0.85 0.18 50 / 0.9)" : "oklch(0.82 0.14 22 / 0.7)"}`,
+              animation: `galaxyTwinkle ${p.duration} ${p.delay} infinite ease-in-out`,
+              opacity: Number.parseFloat(p.opacity) * 0.8,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Floating hearts — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdayHeartParticles.map((p) => (
+          <div
+            key={`bdayheart-overlay-${p.id}`}
+            className="absolute select-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              fontSize: p.size,
+              animation: `heartSway ${16 + p.id * 0.9}s ${p.delay} infinite linear`,
+              opacity: Number.parseFloat(p.opacity) * 0.75,
+              color:
+                p.id % 3 === 0
+                  ? "oklch(0.72 0.22 22)"
+                  : p.id % 3 === 1
+                    ? "oklch(0.78 0.18 355)"
+                    : "oklch(0.82 0.15 35)",
+            }}
+          >
+            {p.id % 4 === 0
+              ? "🌹"
+              : p.id % 4 === 1
+                ? "💕"
+                : p.id % 4 === 2
+                  ? "♥"
+                  : "✦"}
+          </div>
+        ))}
+      </div>
+
+      {/* Twinkling sparkles — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdaySparkleParticles.map((p) => (
+          <div
+            key={`bdaysparkle-overlay-${p.id}`}
+            className="absolute select-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              fontSize: `${6 + (p.id % 7)}px`,
+              animation: `galaxySparkle ${9 + p.id * 0.6}s ${p.delay} infinite ease-in-out`,
+              opacity: Number.parseFloat(p.opacity) * 0.7,
+              color:
+                p.id % 2 === 0 ? "oklch(0.88 0.14 48)" : "oklch(0.82 0.16 22)",
+            }}
+          >
+            {p.id % 2 === 0 ? "✦" : "✧"}
+          </div>
+        ))}
+      </div>
+
+      {/* Warm radial glow — z-index 2 */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 2,
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 50%, oklch(0.35 0.18 22 / 0.38), transparent 70%)",
+          animation: "pulse-glow-red 5s ease-in-out infinite",
+        }}
+      />
+
+      {/* Center content — z-index 10 */}
+      <div
+        className="relative flex flex-col items-center text-center px-6"
+        style={{ maxWidth: 380, zIndex: 10 }}
+      >
+        {/* Sparkle icon */}
+        <div
+          className="slide-el heartbeat-anim mb-4"
+          style={
+            {
+              fontSize: "clamp(3.5rem, 14vw, 5rem)",
+              "--delay": "0ms",
+              filter: "drop-shadow(0 0 28px oklch(0.85 0.22 55 / 0.9))",
+            } as React.CSSProperties
+          }
+        >
+          🎂
+        </div>
+
+        {/* Big heading */}
+        <h1
+          className="slide-el playfair font-black mb-3"
+          style={
+            {
+              fontSize: "clamp(2.4rem, 9vw, 4rem)",
+              background:
+                "linear-gradient(135deg, oklch(0.92 0.1 48) 0%, oklch(0.82 0.2 30) 30%, oklch(0.88 0.16 18) 60%, oklch(0.92 0.1 48) 100%)",
+              backgroundSize: "300% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              lineHeight: 1.1,
+              letterSpacing: "-0.01em",
+              animation: "gradientShift 6s linear infinite",
+              filter: "drop-shadow(0 0 20px oklch(0.65 0.2 30 / 0.65))",
+              "--delay": "80ms",
+            } as React.CSSProperties
+          }
+        >
+          It&apos;s Your Big Day
+        </h1>
+
+        {/* Subheading */}
+        <p
+          className="slide-el crimson-pro italic mb-6"
+          style={
+            {
+              fontSize: "clamp(1.3rem, 5vw, 1.8rem)",
+              color: "oklch(0.9 0.08 25)",
+              textShadow: "0 0 24px oklch(0.65 0.2 22 / 0.8)",
+              "--delay": "160ms",
+            } as React.CSSProperties
+          }
+        >
+          Rasshu 🌹
+        </p>
+
+        {/* Emoji row */}
+        <div
+          className="slide-el flex gap-3"
+          style={
+            {
+              fontSize: "1.6rem",
+              "--delay": "240ms",
+            } as React.CSSProperties
+          }
+        >
+          {birthdayOverlayEmojis.map((item) => (
+            <span
+              key={item.key}
+              className="heartbeat-anim"
+              style={{ display: "inline-block", animationDelay: item.delay }}
+            >
+              {item.emoji}
+            </span>
+          ))}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ===================== SLIDE 5: BIRTHDAY HERO =====================
+
+function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
+  return (
+    <div
+      data-ocid="birthday.section"
+      className={`relative w-full h-full flex flex-col items-center justify-center overflow-hidden ${isActive ? "slide-active" : ""}`}
+      style={{
+        background:
+          "linear-gradient(160deg, oklch(0.10 0.07 10) 0%, oklch(0.14 0.09 15) 45%, oklch(0.09 0.05 355) 100%)",
+      }}
+    >
+      {/* Warm rose-crimson animated blobs — z-index 0 */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <AnimatedBlobs variant="birthday" />
+      </div>
+
+      {/* Soft golden starfield — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdayStarParticles.map((p) => (
+          <div
+            key={`star-${p.id}`}
+            className="absolute rounded-full"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              background:
+                p.id % 4 === 0
+                  ? "oklch(0.92 0.12 55)"
+                  : p.id % 4 === 1
+                    ? "oklch(0.88 0.1 30)"
+                    : "oklch(0.95 0.05 40)",
+              boxShadow: `0 0 ${Number.parseFloat(p.size) * 3}px ${
+                p.id % 4 === 0
+                  ? "oklch(0.85 0.18 50 / 0.9)"
+                  : "oklch(0.82 0.14 22 / 0.7)"
+              }`,
+              animation: `galaxyTwinkle ${p.duration} ${p.delay} infinite ease-in-out`,
+              opacity: Number.parseFloat(p.opacity) * 0.8,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Floating hearts — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdayHeartParticles.map((p) => (
+          <div
+            key={`bdayheart-${p.id}`}
+            className="absolute select-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              fontSize: p.size,
+              animation: `heartSway ${16 + p.id * 0.9}s ${p.delay} infinite linear`,
+              opacity: Number.parseFloat(p.opacity) * 0.75,
+              color:
+                p.id % 3 === 0
+                  ? "oklch(0.72 0.22 22)"
+                  : p.id % 3 === 1
+                    ? "oklch(0.78 0.18 355)"
+                    : "oklch(0.82 0.15 35)",
+            }}
+          >
+            {p.id % 4 === 0
+              ? "🌹"
+              : p.id % 4 === 1
+                ? "💕"
+                : p.id % 4 === 2
+                  ? "♥"
+                  : "✦"}
+          </div>
+        ))}
+      </div>
+
+      {/* Rose-gold sparkle dust — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdaySparkleParticles.map((p) => (
+          <div
+            key={`bdaysparkle-${p.id}`}
+            className="absolute select-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              fontSize: `${6 + (p.id % 7)}px`,
+              animation: `galaxySparkle ${9 + p.id * 0.6}s ${p.delay} infinite ease-in-out`,
+              opacity: Number.parseFloat(p.opacity) * 0.7,
+              color:
+                p.id % 2 === 0 ? "oklch(0.88 0.14 48)" : "oklch(0.82 0.16 22)",
+            }}
+          >
+            {p.id % 2 === 0 ? "✦" : "✧"}
+          </div>
+        ))}
+      </div>
+
+      {/* Falling rose petals — z-index 1 */}
+      <div
+        className="absolute inset-0 overflow-hidden pointer-events-none"
+        style={{ zIndex: 1 }}
+      >
+        {bdayPetalParticles.map((p) => (
+          <div
+            key={`petal-${p.id}`}
+            className="absolute select-none"
+            style={{
+              left: p.left,
+              top: p.top,
+              fontSize: p.size,
+              animation: `petalFall ${p.duration} ${p.delay} infinite linear`,
+              opacity: Number.parseFloat(p.opacity),
+              color:
+                p.id % 2 === 0 ? "oklch(0.65 0.2 22)" : "oklch(0.72 0.18 355)",
+            }}
+          >
+            🌸
+          </div>
+        ))}
+      </div>
+
+      {/* Warm radial glow — z-index 2 */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 2,
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 55%, oklch(0.35 0.18 22 / 0.35), transparent 70%)",
+          animation: "pulse-glow-red 5s ease-in-out infinite",
+        }}
+      />
+
+      {/* Content — z-index 10 */}
+      <div className="relative z-10 flex flex-col items-center text-center px-5 max-w-[420px] mx-auto w-full">
+        {/* Soft badge */}
+        <div
+          className="slide-el inline-flex items-center gap-2 px-4 py-1.5 mb-3 rounded-full"
+          style={
+            {
+              border: "1px solid oklch(0.65 0.18 22 / 0.5)",
+              background: "oklch(0.18 0.1 15 / 0.55)",
+              backdropFilter: "blur(10px)",
+              "--delay": "0ms",
+            } as React.CSSProperties
+          }
+        >
+          <span
+            className="crimson-pro tracking-[0.18em] uppercase"
+            style={{ color: "oklch(0.78 0.15 35)", fontSize: 11 }}
+          >
+            🌹 March 11th · Your Birthday 🌹
+          </span>
+        </div>
+
+        {/* Hero photo in Polaroid frame */}
+        <div
+          className="slide-el photo-float-anim mb-3"
+          style={
+            {
+              filter: "drop-shadow(0 12px 36px oklch(0.2 0.1 15 / 0.8))",
+              "--delay": "80ms",
+            } as React.CSSProperties
+          }
+        >
+          <div
+            className="polaroid-card bday-polaroid"
+            style={{
+              width: "clamp(160px, 48vw, 210px)",
+              background: "white",
+            }}
+          >
+            <img
+              src="/assets/uploads/IMG-20260222-WA0008-1.jpg"
+              alt="my birthday girl"
+              loading="eager"
+              decoding="async"
+              style={{
+                width: "100%",
+                height: "clamp(200px, 60vw, 260px)",
+                objectFit: "cover",
+                objectPosition: "center top",
+                display: "block",
+              }}
+            />
+            <p
+              className="crimson-pro italic text-center"
+              style={{
+                color: "#8b6e6e",
+                fontSize: 13,
+                marginTop: 4,
+                fontStyle: "italic",
+              }}
+            >
+              My World 🌹
+            </p>
+          </div>
+        </div>
+
+        {/* Happy Birthday — warm rose-gold shimmer */}
+        <h1
+          className="slide-el playfair font-black mb-1"
+          style={
+            {
+              fontSize: "clamp(2.2rem, 8vw, 3.4rem)",
+              background:
+                "linear-gradient(135deg, oklch(0.92 0.1 48) 0%, oklch(0.82 0.2 30) 30%, oklch(0.88 0.16 18) 60%, oklch(0.92 0.1 48) 100%)",
+              backgroundSize: "300% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              letterSpacing: "-0.01em",
+              lineHeight: 1.1,
+              animation: "gradientShift 6s linear infinite",
+              filter: "drop-shadow(0 0 18px oklch(0.65 0.2 30 / 0.6))",
+              "--delay": "160ms",
+            } as React.CSSProperties
+          }
+        >
+          Happy Birthday
+        </h1>
+
+        {/* Name — tender italic glow */}
+        <h2
+          className="slide-el playfair italic mb-2 glow-text-red"
+          style={
+            {
+              fontSize: "clamp(1.25rem, 5vw, 1.9rem)",
+              color: "oklch(0.9 0.06 20)",
+              textShadow:
+                "0 0 22px oklch(0.6 0.2 22 / 0.7), 0 0 44px oklch(0.45 0.16 18 / 0.45)",
+              "--delay": "240ms",
+            } as React.CSSProperties
+          }
+        >
+          My baby Rasshu Gullaw
+        </h2>
+
+        {/* Love message — floating breath */}
+        <p
+          className="slide-el crimson-pro italic float-anim mb-3"
+          style={
+            {
+              fontSize: "clamp(1.15rem, 4.8vw, 1.55rem)",
+              color: "oklch(0.88 0.1 28)",
+              textShadow:
+                "0 0 16px oklch(0.6 0.2 22 / 0.65), 0 0 32px oklch(0.45 0.15 18 / 0.4)",
+              "--delay": "320ms",
+            } as React.CSSProperties
+          }
+        >
+          I love youuuuu ❤️
+        </p>
+
+        {/* Romantic emoji row */}
+        <div
+          className="slide-el flex gap-3"
+          style={
+            {
+              fontSize: "1.5rem",
+              "--delay": "400ms",
+            } as React.CSSProperties
+          }
+        >
+          <span
+            className="heartbeat-anim"
+            style={{ display: "inline-block", animationDelay: "0s" }}
+          >
+            🌹
+          </span>
+          <span
+            className="heartbeat-anim"
+            style={{ display: "inline-block", animationDelay: "0.3s" }}
+          >
+            ❤️
+          </span>
+          <span
+            className="heartbeat-anim"
+            style={{ display: "inline-block", animationDelay: "0.6s" }}
+          >
+            🌹
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===================== LOTUS GARDEN =====================
+
+const LOTUS_COUNT = 25;
+
+function calcBloomedCount() {
+  const now = new Date();
+  const secondsIntoDay =
+    now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  const secondsPerLotus = 86400 / LOTUS_COUNT;
+  return Math.floor(secondsIntoDay / secondsPerLotus);
+}
+
+// Pre-compute stable positions so they don't change on re-render
+const LOTUS_POSITIONS = Array.from({ length: LOTUS_COUNT }, (_, i) => ({
+  x: (i / (LOTUS_COUNT - 1)) * 94 + 3,
+  bottomOffset: 8 + ((i * 7 + i * i * 3) % 14),
+  scale: 0.55 + ((i * 13 + i * i * 5) % 10) * 0.045,
+  id: i,
+}));
+
+// 25 lotus flowers that bloom spread across the day (each blooms in order over 24h)
+// Each lotus has 3 states: closed bud → half-open → fully bloomed
+function LotusGarden() {
+  const [bloomedCount, setBloomedCount] = useState(calcBloomedCount);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setBloomedCount(calcBloomedCount());
+    }, 10000); // check every 10s
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div
+      className="absolute bottom-0 left-0 right-0 pointer-events-none"
+      style={{ zIndex: 5, height: "18vh" }}
+    >
+      {LOTUS_POSITIONS.map((pos) => {
+        const i = pos.id;
+        const isFullyBloomed = i < bloomedCount;
+        const isHalfBloomed = i === bloomedCount; // next one blooming
+
+        return (
+          <div
+            key={pos.id}
+            className="absolute flex flex-col items-center"
+            style={{
+              left: `${pos.x}%`,
+              bottom: `${pos.bottomOffset}px`,
+              transform: `translateX(-50%) scale(${pos.scale})`,
+              transformOrigin: "bottom center",
+              transition: "all 2.5s cubic-bezier(0.22, 1, 0.36, 1)",
+            }}
+          >
+            {/* Lotus SVG */}
+            <svg
+              width="32"
+              height="34"
+              viewBox="0 0 32 34"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label={`lotus ${i + 1}`}
+              style={{
+                filter: isFullyBloomed
+                  ? "drop-shadow(0 0 6px oklch(0.7 0.2 0 / 0.8))"
+                  : isHalfBloomed
+                    ? "drop-shadow(0 0 3px oklch(0.6 0.18 0 / 0.5))"
+                    : "none",
+                transition: "filter 2s ease",
+              }}
+            >
+              {/* Stem */}
+              <path
+                d="M16 34 C16 34 15 28 16 22"
+                stroke={
+                  isFullyBloomed
+                    ? "oklch(0.45 0.18 140)"
+                    : "oklch(0.35 0.12 140)"
+                }
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              {/* Leaves on stem */}
+              <path
+                d="M16 28 C12 26 10 23 12 21 C14 23 15 25 16 28Z"
+                fill={
+                  isFullyBloomed
+                    ? "oklch(0.42 0.2 140 / 0.8)"
+                    : "oklch(0.32 0.14 140 / 0.6)"
+                }
+              />
+              <path
+                d="M16 26 C20 24 22 21 20 19 C18 21 17 23 16 26Z"
+                fill={
+                  isFullyBloomed
+                    ? "oklch(0.42 0.2 140 / 0.8)"
+                    : "oklch(0.32 0.14 140 / 0.6)"
+                }
+              />
+
+              {/* Outer petals — closed bud state */}
+              {!isFullyBloomed && !isHalfBloomed && (
+                <>
+                  <path
+                    d="M16 22 C14 18 13 14 16 10 C19 14 18 18 16 22Z"
+                    fill="oklch(0.55 0.15 0 / 0.6)"
+                  />
+                  <path
+                    d="M16 22 C12 20 9 17 10 13 C13 15 15 18 16 22Z"
+                    fill="oklch(0.52 0.14 5 / 0.5)"
+                  />
+                  <path
+                    d="M16 22 C20 20 23 17 22 13 C19 15 17 18 16 22Z"
+                    fill="oklch(0.52 0.14 5 / 0.5)"
+                  />
+                </>
+              )}
+
+              {/* Half-open petals */}
+              {isHalfBloomed && (
+                <>
+                  <path
+                    d="M16 22 C14 16 12 10 16 4 C20 10 18 16 16 22Z"
+                    fill="oklch(0.72 0.2 355 / 0.7)"
+                  />
+                  <path
+                    d="M16 22 C10 18 6 14 8 7 C12 12 14 17 16 22Z"
+                    fill="oklch(0.68 0.18 5 / 0.6)"
+                  />
+                  <path
+                    d="M16 22 C22 18 26 14 24 7 C20 12 18 17 16 22Z"
+                    fill="oklch(0.68 0.18 5 / 0.6)"
+                  />
+                  <path
+                    d="M16 22 C8 20 4 16 5 10 C10 14 13 18 16 22Z"
+                    fill="oklch(0.75 0.16 350 / 0.5)"
+                  />
+                  <path
+                    d="M16 22 C24 20 28 16 27 10 C22 14 19 18 16 22Z"
+                    fill="oklch(0.75 0.16 350 / 0.5)"
+                  />
+                  {/* Center */}
+                  <circle
+                    cx="16"
+                    cy="18"
+                    r="3"
+                    fill="oklch(0.88 0.15 55 / 0.9)"
+                  />
+                </>
+              )}
+
+              {/* Fully bloomed petals */}
+              {isFullyBloomed && (
+                <>
+                  {/* Back outer petals */}
+                  <path
+                    d="M16 21 C6 16 2 8 7 2 C12 8 14 15 16 21Z"
+                    fill="oklch(0.78 0.18 355 / 0.55)"
+                  />
+                  <path
+                    d="M16 21 C26 16 30 8 25 2 C20 8 18 15 16 21Z"
+                    fill="oklch(0.78 0.18 355 / 0.55)"
+                  />
+                  <path
+                    d="M16 21 C14 10 12 3 16 0 C20 3 18 10 16 21Z"
+                    fill="oklch(0.82 0.2 0 / 0.65)"
+                  />
+                  {/* Mid petals */}
+                  <path
+                    d="M16 21 C7 18 3 12 6 6 C11 11 14 16 16 21Z"
+                    fill="oklch(0.85 0.22 358 / 0.75)"
+                  />
+                  <path
+                    d="M16 21 C25 18 29 12 26 6 C21 11 18 16 16 21Z"
+                    fill="oklch(0.85 0.22 358 / 0.75)"
+                  />
+                  {/* Front inner petals */}
+                  <path
+                    d="M16 21 C10 17 9 11 12 7 C14 12 15 17 16 21Z"
+                    fill="oklch(0.90 0.18 5 / 0.85)"
+                  />
+                  <path
+                    d="M16 21 C22 17 23 11 20 7 C18 12 17 17 16 21Z"
+                    fill="oklch(0.90 0.18 5 / 0.85)"
+                  />
+                  <path
+                    d="M16 21 C15 14 14 8 16 5 C18 8 17 14 16 21Z"
+                    fill="oklch(0.94 0.12 10 / 0.9)"
+                  />
+                  {/* Golden center */}
+                  <circle cx="16" cy="17" r="3.5" fill="oklch(0.92 0.18 55)" />
+                  <circle cx="16" cy="17" r="2" fill="oklch(0.88 0.22 50)" />
+                  {/* Stamens */}
+                  <circle
+                    cx="14.5"
+                    cy="15.5"
+                    r="0.8"
+                    fill="oklch(0.75 0.2 50)"
+                  />
+                  <circle
+                    cx="17.5"
+                    cy="15.5"
+                    r="0.8"
+                    fill="oklch(0.75 0.2 50)"
+                  />
+                  <circle cx="16" cy="14.5" r="0.8" fill="oklch(0.75 0.2 50)" />
+                </>
+              )}
+            </svg>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ===================== COUNTDOWN BOX =====================
 
 function CountdownBox({ value, label }: { value: number; label: string }) {
@@ -1069,9 +1888,30 @@ const countdownEmojiItems = [
   { emoji: "❤️", delay: "0.8s", key: "heart-2" },
 ];
 
-function CountdownSlide({ isActive }: { isActive: boolean }) {
+function CountdownSlide({
+  isActive,
+  onBirthdayTrigger,
+}: {
+  isActive: boolean;
+  onBirthdayTrigger: () => void;
+}) {
   const targetDate = new Date("2026-03-11T00:00:00");
   const timeLeft = useCountdown(targetDate);
+  const triggered = useRef(false);
+
+  useEffect(() => {
+    if (
+      !triggered.current &&
+      timeLeft.days === 0 &&
+      timeLeft.hours === 0 &&
+      timeLeft.minutes === 0 &&
+      timeLeft.seconds === 0 &&
+      new Date() >= targetDate
+    ) {
+      triggered.current = true;
+      onBirthdayTrigger();
+    }
+  }, [timeLeft, targetDate, onBirthdayTrigger]);
 
   return (
     <div
@@ -1122,7 +1962,7 @@ function CountdownSlide({ isActive }: { isActive: boolean }) {
       <div
         data-ocid="countdown.panel"
         className="relative z-10 flex flex-col items-center text-center px-5 max-w-[420px] mx-auto w-full"
-        style={{ paddingBottom: "5rem" }}
+        style={{ paddingBottom: "22vh" }}
       >
         {/* Badge – badge-pulse */}
         <div
@@ -1279,10 +2119,14 @@ function CountdownSlide({ isActive }: { isActive: boolean }) {
         </p>
       </div>
 
+      {/* Lotus Garden — 25 lotuses blooming through the day */}
+      <LotusGarden />
+
       {/* Footer */}
       <div
-        className="absolute bottom-0 left-0 right-0 py-3 text-center z-10"
+        className="absolute bottom-0 left-0 right-0 py-3 text-center"
         style={{
+          zIndex: 10,
           borderTop: "1px solid oklch(0.2 0.03 15)",
           paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))",
         }}
@@ -1324,11 +2168,13 @@ const SLIDE_BG_COLORS = [
   "oklch(0.91 0.055 54)",
   // 4: countdown (near black)
   "oklch(0.08 0.015 10)",
+  // 5: birthday hero (deep rose-crimson — warm romantic blend)
+  "oklch(0.10 0.07 10)",
 ];
 
 // ===================== APP =====================
 
-const SLIDES = 5;
+const SLIDES = 6;
 type SlideState =
   | { kind: "idle"; current: number }
   | {
@@ -1338,57 +2184,108 @@ type SlideState =
       phase: "fade-out" | "fade-in";
     };
 
+// Returns true if today is on or after March 8th of the current year (or any future year)
+function isPastWomensDay(): boolean {
+  const now = new Date();
+  const year = now.getFullYear();
+  const womensDay = new Date(year, 2, 8); // March 8
+  return now >= womensDay;
+}
+
+const VIEWED_KEY = "rasshu_womens_day_viewed";
+
 export default function App() {
-  const [slideState, setSlideState] = useState<SlideState>({
+  // Determine starting slide: if past March 8th and already viewed, start at countdown (slide 4)
+  const getInitialSlide = () => {
+    if (isPastWomensDay()) {
+      const viewed = localStorage.getItem(VIEWED_KEY);
+      if (viewed === "true") return 4; // jump straight to countdown
+    }
+    return 0;
+  };
+
+  const [slideState, setSlideState] = useState<SlideState>(() => ({
     kind: "idle",
-    current: 0,
-  });
+    current: getInitialSlide(),
+  }));
   const [activeKey, setActiveKey] = useState<number>(0);
   // Track the blended background color during transition
   const [bgOverlayColor, setBgOverlayColor] = useState<string | null>(null);
   const [bgOverlayOpacity, setBgOverlayOpacity] = useState(0);
+  // Birthday transition overlay
+  const [showBirthdayTransition, setShowBirthdayTransition] = useState(false);
   // Touch swipe tracking
   const touchStartX = useRef<number>(0);
+  // Whether we're in "post March 8th viewed" mode — show replay button
+  const [showReplayBtn, setShowReplayBtn] = useState(() => {
+    if (isPastWomensDay()) {
+      return localStorage.getItem(VIEWED_KEY) === "true";
+    }
+    return false;
+  });
 
   const current =
     slideState.kind === "idle" ? slideState.current : slideState.current;
+
+  const runTransitionTo = useCallback(
+    (targetIndex: number) => {
+      if (slideState.kind === "animating") return;
+      const cur = slideState.current;
+      const next = targetIndex;
+
+      setSlideState({
+        kind: "animating",
+        current: cur,
+        next,
+        phase: "fade-out",
+      });
+      setBgOverlayColor(SLIDE_BG_COLORS[next]);
+      setBgOverlayOpacity(0);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setBgOverlayOpacity(1);
+        });
+      });
+
+      setTimeout(() => {
+        setSlideState({
+          kind: "animating",
+          current: cur,
+          next,
+          phase: "fade-in",
+        });
+        setTimeout(() => {
+          setBgOverlayOpacity(0);
+          setTimeout(() => {
+            setBgOverlayColor(null);
+            setSlideState({ kind: "idle", current: next });
+            setActiveKey((k) => k + 1);
+          }, 1300);
+        }, 80);
+      }, 800);
+    },
+    [slideState],
+  );
 
   const goNext = useCallback(() => {
     if (slideState.kind === "animating") return;
     const cur = slideState.current;
     const next = (cur + 1) % SLIDES;
+    // Mark as viewed once she moves past the secret intro page (on/after March 8th)
+    if (cur === 0 && isPastWomensDay()) {
+      localStorage.setItem(VIEWED_KEY, "true");
+      setShowReplayBtn(true);
+    }
+    runTransitionTo(next);
+  }, [slideState, runTransitionTo]);
 
-    // Phase 1: fade content out + blend bg color toward next
-    setSlideState({ kind: "animating", current: cur, next, phase: "fade-out" });
-    setBgOverlayColor(SLIDE_BG_COLORS[next]);
-    setBgOverlayOpacity(0);
-
-    // Ramp overlay opacity up
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setBgOverlayOpacity(1);
-      });
-    });
-
-    // Phase 2: switch to new slide content (still hidden), then fade in
-    setTimeout(() => {
-      setSlideState({
-        kind: "animating",
-        current: cur,
-        next,
-        phase: "fade-in",
-      });
-      // Fade overlay back out as new content fades in -- slight overlap for smooth blend
-      setTimeout(() => {
-        setBgOverlayOpacity(0);
-        setTimeout(() => {
-          setBgOverlayColor(null);
-          setSlideState({ kind: "idle", current: next });
-          setActiveKey((k) => k + 1);
-        }, 1300);
-      }, 80);
-    }, 800);
-  }, [slideState]);
+  const goTo = useCallback(
+    (index: number) => {
+      runTransitionTo(index);
+    },
+    [runTransitionTo],
+  );
 
   const renderSlide = (index: number, isActive: boolean) => {
     switch (index) {
@@ -1401,7 +2298,14 @@ export default function App() {
       case 3:
         return <MemoriesSlide isActive={isActive} />;
       case 4:
-        return <CountdownSlide isActive={isActive} />;
+        return (
+          <CountdownSlide
+            isActive={isActive}
+            onBirthdayTrigger={() => setShowBirthdayTransition(true)}
+          />
+        );
+      case 5:
+        return <BirthdayHeroSlide isActive={isActive} />;
       default:
         return null;
     }
@@ -1513,6 +2417,49 @@ export default function App() {
             opacity: bgOverlayOpacity,
             transition: "opacity 1.3s cubic-bezier(0.4, 0, 0.2, 1)",
             pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* Replay button — top-left, only shown after March 8th once already viewed, on the countdown slide */}
+      {showReplayBtn && current === 4 && (
+        <button
+          type="button"
+          data-ocid="countdown.secondary_button"
+          onClick={() => {
+            runTransitionTo(0);
+          }}
+          style={{
+            position: "absolute",
+            top: "calc(0.85rem + env(safe-area-inset-top, 0px))",
+            left: "1rem",
+            zIndex: 30,
+            background: "oklch(0.14 0.05 15 / 0.75)",
+            border: "1px solid oklch(0.35 0.12 22 / 0.6)",
+            borderRadius: 9999,
+            color: "oklch(0.65 0.14 28)",
+            fontSize: 11,
+            fontFamily: "'Crimson Pro', Georgia, serif",
+            fontStyle: "italic",
+            letterSpacing: "0.04em",
+            padding: "6px 14px",
+            backdropFilter: "blur(12px)",
+            cursor: "pointer",
+            opacity: isContentVisible ? 1 : 0,
+            transition: "opacity 0.6s ease",
+            pointerEvents: isContentVisible ? "auto" : "none",
+          }}
+        >
+          ← see from start
+        </button>
+      )}
+
+      {/* Birthday transition overlay */}
+      {showBirthdayTransition && (
+        <BirthdayTransitionOverlay
+          onTransitionDone={() => {
+            setShowBirthdayTransition(false);
+            goTo(5);
           }}
         />
       )}
