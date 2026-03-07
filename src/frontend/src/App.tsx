@@ -11,20 +11,28 @@ interface TimeLeft {
 
 // ===================== HOOKS =====================
 
-function useCountdown(targetDate: Date) {
+function useCountdown(targetDate: Date, forceZero = false) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   });
+  // Separate flag so consumers know if the countdown genuinely expired
+  const [expired, setExpired] = useState(false);
 
   useEffect(() => {
+    if (forceZero) {
+      setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      setExpired(true);
+      return;
+    }
     const calc = () => {
       const now = new Date().getTime();
       const diff = targetDate.getTime() - now;
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setExpired(true);
         return;
       }
       setTimeLeft({
@@ -37,9 +45,9 @@ function useCountdown(targetDate: Date) {
     calc();
     const id = setInterval(calc, 1000);
     return () => clearInterval(id);
-  }, [targetDate]);
+  }, [targetDate, forceZero]);
 
-  return timeLeft;
+  return { timeLeft, expired };
 }
 
 // ===================== PARTICLES =====================
@@ -119,20 +127,6 @@ const bdayStarParticles = generateStarParticles(50);
 const bdayHeartParticles = generateHeartParticles(12);
 const bdaySparkleParticles = generateSparkleParticles(16);
 
-// Extra rose-gold floating petals for birthday hero
-function generatePetalParticles(count: number): Particle[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    top: `${-10 + Math.random() * 20}%`,
-    size: `${14 + Math.random() * 12}px`,
-    duration: `${14 + Math.random() * 10}s`,
-    delay: `-${(i / count) * 20 + Math.random() * 5}s`,
-    opacity: `${0.35 + Math.random() * 0.4}`,
-  }));
-}
-const bdayPetalParticles = generatePetalParticles(10);
-
 // ===================== POLAROID CARD =====================
 
 function PolaroidCard({
@@ -142,6 +136,7 @@ function PolaroidCard({
   style = {},
   objectPosition = "center",
   loading = "lazy",
+  fetchPriority,
 }: {
   src: string;
   label: string;
@@ -149,6 +144,7 @@ function PolaroidCard({
   style?: React.CSSProperties;
   objectPosition?: string;
   loading?: "lazy" | "eager";
+  fetchPriority?: "high" | "low" | "auto";
 }) {
   return (
     <div className={`polaroid-card ${className}`} style={style}>
@@ -158,6 +154,7 @@ function PolaroidCard({
         className="w-full"
         loading={loading}
         decoding="async"
+        fetchPriority={fetchPriority}
         style={{
           height: "180px",
           width: "100%",
@@ -180,8 +177,47 @@ function PolaroidCard({
 
 function AnimatedBlobs({
   variant,
-}: { variant: "dark" | "peach" | "blush" | "black" | "secret" | "birthday" }) {
+}: {
+  variant:
+    | "dark"
+    | "peach"
+    | "blush"
+    | "black"
+    | "secret"
+    | "birthday"
+    | "bdayHero";
+}) {
   const configs = {
+    bdayHero: [
+      {
+        color: "oklch(0.38 0.22 310 / 0.5)",
+        size: "75vw",
+        top: "-25%",
+        left: "-20%",
+        anim: "blobDrift1 28s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.32 0.18 340 / 0.45)",
+        size: "65vw",
+        top: "35%",
+        left: "45%",
+        anim: "blobDrift2 22s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.44 0.2 290 / 0.38)",
+        size: "60vw",
+        top: "60%",
+        left: "-15%",
+        anim: "blobDrift3 32s ease-in-out infinite",
+      },
+      {
+        color: "oklch(0.22 0.12 320 / 0.55)",
+        size: "80vw",
+        top: "-5%",
+        left: "25%",
+        anim: "blobDrift4 25s ease-in-out infinite",
+      },
+    ],
     birthday: [
       {
         color: "oklch(0.35 0.2 22 / 0.55)",
@@ -576,6 +612,7 @@ function HeroSlide({ isActive }: { isActive: boolean }) {
             label="my everything 🌹"
             style={{ width: 170 }}
             loading="eager"
+            fetchPriority="high"
           />
         </div>
 
@@ -1073,38 +1110,38 @@ function BirthdayTransitionOverlay({
 }: {
   onTransitionDone: () => void;
 }) {
-  const [visible, setVisible] = useState(true);
+  // phase: "in" → fully visible, "out" → fading out
+  const [phase, setPhase] = useState<"in" | "out">("in");
   const doneFired = useRef(false);
 
-  const triggerDone = useCallback(() => {
+  const triggerExit = useCallback(() => {
     if (doneFired.current) return;
     doneFired.current = true;
-    setVisible(false);
+    setPhase("out");
+    // Wait for fade-out (1s) then call parent
     setTimeout(() => {
       onTransitionDone();
-    }, 800);
+    }, 1000);
   }, [onTransitionDone]);
 
-  // Auto-trigger after 3s
+  // Auto-exit after 3.5s
   useEffect(() => {
-    const t = setTimeout(triggerDone, 3000);
+    const t = setTimeout(triggerExit, 3500);
     return () => clearTimeout(t);
-  }, [triggerDone]);
+  }, [triggerExit]);
 
   const birthdayOverlayEmojis = [
-    { emoji: "🎂", delay: "0s", key: "cake" },
-    { emoji: "💖", delay: "0.15s", key: "sparkleheart" },
-    { emoji: "🎉", delay: "0.3s", key: "party" },
-    { emoji: "🌸", delay: "0.45s", key: "blossom" },
-    { emoji: "✨", delay: "0.6s", key: "sparkle" },
+    { emoji: "🎂", delay: "0.4s", key: "cake" },
+    { emoji: "💖", delay: "0.6s", key: "sparkleheart" },
+    { emoji: "🎉", delay: "0.8s", key: "party" },
+    { emoji: "🌸", delay: "1.0s", key: "blossom" },
+    { emoji: "✨", delay: "1.2s", key: "sparkle" },
   ];
 
   return (
     <button
       type="button"
-      onClick={triggerDone}
-      onTouchEnd={triggerDone}
-      aria-label="Birthday transition – tap to continue"
+      onClick={triggerExit}
       style={{
         position: "fixed",
         inset: 0,
@@ -1115,8 +1152,8 @@ function BirthdayTransitionOverlay({
         justifyContent: "center",
         background:
           "linear-gradient(160deg, oklch(0.10 0.07 10) 0%, oklch(0.14 0.09 15) 50%, oklch(0.09 0.05 355) 100%)",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: phase === "in" ? 1 : 0,
+        transition: "opacity 1s cubic-bezier(0.4, 0, 0.2, 1)",
         cursor: "pointer",
         overflow: "hidden",
         border: "none",
@@ -1125,12 +1162,12 @@ function BirthdayTransitionOverlay({
         height: "100%",
       }}
     >
-      {/* Deep nebula blobs — z-index 0, behind everything */}
+      {/* Deep nebula blobs */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-        <AnimatedBlobs variant="birthday" />
+        <AnimatedBlobs variant="bdayHero" />
       </div>
 
-      {/* Galaxy starfield — fine dots twinkling in place, z-index 1 */}
+      {/* Galaxy starfield */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: 1 }}
@@ -1150,7 +1187,7 @@ function BirthdayTransitionOverlay({
                   : p.id % 4 === 1
                     ? "oklch(0.88 0.1 30)"
                     : "oklch(0.95 0.05 40)",
-              boxShadow: `0 0 ${Number.parseFloat(p.size) * 2.5}px ${p.id % 4 === 0 ? "oklch(0.85 0.18 50 / 0.9)" : "oklch(0.82 0.14 22 / 0.7)"}`,
+              boxShadow: `0 0 ${Number.parseFloat(p.size) * 2.5}px oklch(0.85 0.18 50 / 0.8)`,
               animation: `galaxyTwinkle ${p.duration} ${p.delay} infinite ease-in-out`,
               opacity: Number.parseFloat(p.opacity) * 0.8,
             }}
@@ -1158,7 +1195,7 @@ function BirthdayTransitionOverlay({
         ))}
       </div>
 
-      {/* Floating hearts — z-index 1 */}
+      {/* Floating hearts */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: 1 }}
@@ -1192,31 +1229,7 @@ function BirthdayTransitionOverlay({
         ))}
       </div>
 
-      {/* Twinkling sparkles — z-index 1 */}
-      <div
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-        style={{ zIndex: 1 }}
-      >
-        {bdaySparkleParticles.map((p) => (
-          <div
-            key={`bdaysparkle-overlay-${p.id}`}
-            className="absolute select-none"
-            style={{
-              left: p.left,
-              top: p.top,
-              fontSize: `${6 + (p.id % 7)}px`,
-              animation: `galaxySparkle ${9 + p.id * 0.6}s ${p.delay} infinite ease-in-out`,
-              opacity: Number.parseFloat(p.opacity) * 0.7,
-              color:
-                p.id % 2 === 0 ? "oklch(0.88 0.14 48)" : "oklch(0.82 0.16 22)",
-            }}
-          >
-            {p.id % 2 === 0 ? "✦" : "✧"}
-          </div>
-        ))}
-      </div>
-
-      {/* Warm radial glow — z-index 2 */}
+      {/* Warm radial glow */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -1227,78 +1240,70 @@ function BirthdayTransitionOverlay({
         }}
       />
 
-      {/* Center content — z-index 10 */}
+      {/* Center content — uses its own keyframe animations, NOT slide-el */}
       <div
         className="relative flex flex-col items-center text-center px-6"
         style={{ maxWidth: 380, zIndex: 10 }}
       >
-        {/* Sparkle icon */}
+        {/* Cake icon */}
         <div
-          className="slide-el heartbeat-anim mb-4"
-          style={
-            {
-              fontSize: "clamp(3.5rem, 14vw, 5rem)",
-              "--delay": "0ms",
-              filter: "drop-shadow(0 0 28px oklch(0.85 0.22 55 / 0.9))",
-            } as React.CSSProperties
-          }
+          style={{
+            fontSize: "clamp(3.5rem, 14vw, 5rem)",
+            filter: "drop-shadow(0 0 28px oklch(0.85 0.22 55 / 0.9))",
+            animation:
+              "bdayOverlayEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both, heartbeat 3s ease-in-out 1s infinite",
+            marginBottom: "1rem",
+          }}
         >
           🎂
         </div>
 
         {/* Big heading */}
         <h1
-          className="slide-el playfair font-black mb-3"
-          style={
-            {
-              fontSize: "clamp(2.4rem, 9vw, 4rem)",
-              background:
-                "linear-gradient(135deg, oklch(0.92 0.1 48) 0%, oklch(0.82 0.2 30) 30%, oklch(0.88 0.16 18) 60%, oklch(0.92 0.1 48) 100%)",
-              backgroundSize: "300% auto",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              lineHeight: 1.1,
-              letterSpacing: "-0.01em",
-              animation: "gradientShift 6s linear infinite",
-              filter: "drop-shadow(0 0 20px oklch(0.65 0.2 30 / 0.65))",
-              "--delay": "80ms",
-            } as React.CSSProperties
-          }
+          className="playfair font-black"
+          style={{
+            fontSize: "clamp(2.4rem, 9vw, 4rem)",
+            background:
+              "linear-gradient(135deg, oklch(0.92 0.1 48) 0%, oklch(0.82 0.2 30) 30%, oklch(0.88 0.16 18) 60%, oklch(0.92 0.1 48) 100%)",
+            backgroundSize: "300% auto",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text",
+            lineHeight: 1.1,
+            letterSpacing: "-0.01em",
+            animation:
+              "bdayOverlayEnter 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both, gradientShift 6s linear 1.2s infinite",
+            filter: "drop-shadow(0 0 20px oklch(0.65 0.2 30 / 0.65))",
+            marginBottom: "0.75rem",
+          }}
         >
           It&apos;s Your Big Day
         </h1>
 
         {/* Subheading */}
         <p
-          className="slide-el crimson-pro italic mb-6"
-          style={
-            {
-              fontSize: "clamp(1.3rem, 5vw, 1.8rem)",
-              color: "oklch(0.9 0.08 25)",
-              textShadow: "0 0 24px oklch(0.65 0.2 22 / 0.8)",
-              "--delay": "160ms",
-            } as React.CSSProperties
-          }
+          className="crimson-pro italic"
+          style={{
+            fontSize: "clamp(1.3rem, 5vw, 1.8rem)",
+            color: "oklch(0.9 0.08 25)",
+            textShadow: "0 0 24px oklch(0.65 0.2 22 / 0.8)",
+            animation:
+              "bdayOverlayEnter 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both",
+            marginBottom: "1.5rem",
+          }}
         >
           Rasshu 🌹
         </p>
 
         {/* Emoji row */}
-        <div
-          className="slide-el flex gap-3"
-          style={
-            {
-              fontSize: "1.6rem",
-              "--delay": "240ms",
-            } as React.CSSProperties
-          }
-        >
+        <div style={{ display: "flex", gap: "0.75rem", fontSize: "1.6rem" }}>
           {birthdayOverlayEmojis.map((item) => (
             <span
               key={item.key}
-              className="heartbeat-anim"
-              style={{ display: "inline-block", animationDelay: item.delay }}
+              style={{
+                display: "inline-block",
+                animation: `bdayOverlayEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${item.delay} both, heartbeat 3.5s ease-in-out ${item.delay} infinite`,
+              }}
             >
               {item.emoji}
             </span>
@@ -1318,15 +1323,15 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
       className={`relative w-full h-full flex flex-col items-center justify-center overflow-hidden ${isActive ? "slide-active" : ""}`}
       style={{
         background:
-          "linear-gradient(160deg, oklch(0.10 0.07 10) 0%, oklch(0.14 0.09 15) 45%, oklch(0.09 0.05 355) 100%)",
+          "linear-gradient(160deg, oklch(0.13 0.1 300) 0%, oklch(0.10 0.08 320) 50%, oklch(0.08 0.05 340) 100%)",
       }}
     >
-      {/* Warm rose-crimson animated blobs — z-index 0 */}
+      {/* Plum-to-rose animated blobs — z-index 0 */}
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
-        <AnimatedBlobs variant="birthday" />
+        <AnimatedBlobs variant="bdayHero" />
       </div>
 
-      {/* Soft golden starfield — z-index 1 */}
+      {/* Galaxy starfield recoloured in rose/violet tones — z-index 1 */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: 1 }}
@@ -1342,23 +1347,23 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
               height: p.size,
               background:
                 p.id % 4 === 0
-                  ? "oklch(0.92 0.12 55)"
+                  ? "oklch(0.88 0.14 320)"
                   : p.id % 4 === 1
-                    ? "oklch(0.88 0.1 30)"
-                    : "oklch(0.95 0.05 40)",
+                    ? "oklch(0.82 0.1 300)"
+                    : "oklch(0.95 0.06 310)",
               boxShadow: `0 0 ${Number.parseFloat(p.size) * 3}px ${
                 p.id % 4 === 0
-                  ? "oklch(0.85 0.18 50 / 0.9)"
-                  : "oklch(0.82 0.14 22 / 0.7)"
+                  ? "oklch(0.75 0.2 320 / 0.9)"
+                  : "oklch(0.68 0.18 300 / 0.7)"
               }`,
               animation: `galaxyTwinkle ${p.duration} ${p.delay} infinite ease-in-out`,
-              opacity: Number.parseFloat(p.opacity) * 0.8,
+              opacity: Number.parseFloat(p.opacity) * 0.85,
             }}
           />
         ))}
       </div>
 
-      {/* Floating hearts — z-index 1 */}
+      {/* Floating pink/rose hearts — z-index 1 */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: 1 }}
@@ -1372,13 +1377,13 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
               top: p.top,
               fontSize: p.size,
               animation: `heartSway ${16 + p.id * 0.9}s ${p.delay} infinite linear`,
-              opacity: Number.parseFloat(p.opacity) * 0.75,
+              opacity: Number.parseFloat(p.opacity) * 0.7,
               color:
                 p.id % 3 === 0
-                  ? "oklch(0.72 0.22 22)"
+                  ? "oklch(0.72 0.22 330)"
                   : p.id % 3 === 1
-                    ? "oklch(0.78 0.18 355)"
-                    : "oklch(0.82 0.15 35)",
+                    ? "oklch(0.68 0.22 320)"
+                    : "oklch(0.78 0.18 315)",
             }}
           >
             {p.id % 4 === 0
@@ -1392,7 +1397,7 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
         ))}
       </div>
 
-      {/* Rose-gold sparkle dust — z-index 1 */}
+      {/* Rose sparkle dust — z-index 1 */}
       <div
         className="absolute inset-0 overflow-hidden pointer-events-none"
         style={{ zIndex: 1 }}
@@ -1406,9 +1411,9 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
               top: p.top,
               fontSize: `${6 + (p.id % 7)}px`,
               animation: `galaxySparkle ${9 + p.id * 0.6}s ${p.delay} infinite ease-in-out`,
-              opacity: Number.parseFloat(p.opacity) * 0.7,
+              opacity: Number.parseFloat(p.opacity) * 0.65,
               color:
-                p.id % 2 === 0 ? "oklch(0.88 0.14 48)" : "oklch(0.82 0.16 22)",
+                p.id % 2 === 0 ? "oklch(0.78 0.2 320)" : "oklch(0.72 0.18 310)",
             }}
           >
             {p.id % 2 === 0 ? "✦" : "✧"}
@@ -1416,49 +1421,25 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
         ))}
       </div>
 
-      {/* Falling rose petals — z-index 1 */}
-      <div
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-        style={{ zIndex: 1 }}
-      >
-        {bdayPetalParticles.map((p) => (
-          <div
-            key={`petal-${p.id}`}
-            className="absolute select-none"
-            style={{
-              left: p.left,
-              top: p.top,
-              fontSize: p.size,
-              animation: `petalFall ${p.duration} ${p.delay} infinite linear`,
-              opacity: Number.parseFloat(p.opacity),
-              color:
-                p.id % 2 === 0 ? "oklch(0.65 0.2 22)" : "oklch(0.72 0.18 355)",
-            }}
-          >
-            🌸
-          </div>
-        ))}
-      </div>
-
-      {/* Warm radial glow — z-index 2 */}
+      {/* Plum radial glow — z-index 2 */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           zIndex: 2,
           background:
-            "radial-gradient(ellipse 70% 60% at 50% 55%, oklch(0.35 0.18 22 / 0.35), transparent 70%)",
+            "radial-gradient(ellipse 70% 60% at 50% 60%, oklch(0.38 0.2 310 / 0.32), transparent 70%)",
           animation: "pulse-glow-red 5s ease-in-out infinite",
         }}
       />
 
-      {/* Content — z-index 10, mirroring the Women's Day hero layout */}
+      {/* Content — z-index 10, mirrors Women's Day hero layout exactly */}
       <div className="relative z-10 flex flex-col items-center text-center px-5 max-w-[420px] mx-auto w-full">
-        {/* Hero photo in Polaroid frame — same position as Women's Day hero photo */}
+        {/* Hero polaroid — floats continuously, same as Women's Day hero */}
         <div
-          className="slide-el photo-float-anim mb-2"
+          className="slide-el photo-float-anim mb-4"
           style={
             {
-              filter: "drop-shadow(0 10px 30px oklch(0.15 0.1 15 / 0.85))",
+              filter: "drop-shadow(0 10px 28px oklch(0.12 0.12 310 / 0.75))",
               "--delay": "0ms",
             } as React.CSSProperties
           }
@@ -1466,7 +1447,7 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
           <div
             className="polaroid-card bday-polaroid"
             style={{
-              width: "clamp(155px, 46vw, 200px)",
+              width: "clamp(150px, 44vw, 185px)",
               background: "white",
             }}
           >
@@ -1475,85 +1456,123 @@ function BirthdayHeroSlide({ isActive }: { isActive: boolean }) {
               alt="my birthday girl"
               loading="eager"
               decoding="async"
+              fetchPriority="high"
               style={{
                 width: "100%",
-                height: "clamp(195px, 58vw, 250px)",
+                height: "clamp(188px, 55vw, 232px)",
                 objectFit: "cover",
                 objectPosition: "center top",
                 display: "block",
               }}
             />
-            <p
-              className="crimson-pro italic text-center"
-              style={{
-                color: "#8b6e6e",
-                fontSize: 13,
-                marginTop: 4,
-                fontStyle: "italic",
-              }}
-            >
-              My World 🌹
-            </p>
+            <div style={{ padding: "5px 8px 3px" }}>
+              <p
+                className="crimson-pro italic text-center"
+                style={{ color: "#8b6e6e", fontSize: 11 }}
+              >
+                My World 🌹
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* "Happy Birthday baby" — sits directly under the photo like Women's Day hero */}
-        <h1
-          className="slide-el playfair font-black mb-1 shimmer-heading"
+        {/* Badge pill — plum glow, same structure as Women's Day badge */}
+        <div
+          className="slide-el rotate-float inline-flex items-center gap-2 px-4 py-1.5 mb-4 rounded-full"
           style={
             {
-              fontSize: "clamp(2rem, 7.5vw, 3.2rem)",
-              color: "oklch(0.92 0.14 48)",
-              textShadow:
-                "0 0 20px oklch(0.75 0.2 30 / 0.7), 0 0 40px oklch(0.6 0.18 22 / 0.45)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.1,
+              border: "1px solid oklch(0.55 0.2 310 / 0.6)",
+              background: "oklch(0.22 0.1 300 / 0.45)",
+              backdropFilter: "blur(8px)",
+              boxShadow:
+                "0 0 16px oklch(0.45 0.2 310 / 0.4), 0 0 32px oklch(0.35 0.18 300 / 0.22)",
               "--delay": "80ms",
             } as React.CSSProperties
           }
         >
-          Happy Birthday baby 🌹
-        </h1>
+          <span
+            className="crimson-pro tracking-[0.2em] uppercase"
+            style={{
+              color: "oklch(0.78 0.15 320)",
+              fontSize: 11,
+            }}
+          >
+            ✨ March 11th · Her Birthday ✨
+          </span>
+        </div>
 
-        {/* Name — tender italic glow */}
-        <h2
-          className="slide-el playfair italic mb-2"
+        {/* Main heading — shimmer glow in plum-rose tones */}
+        <h1
+          className="slide-el playfair font-black leading-tight mb-2 shimmer-heading"
           style={
             {
-              fontSize: "clamp(1.2rem, 4.8vw, 1.85rem)",
-              color: "oklch(0.88 0.1 22)",
+              fontSize: "clamp(2rem, 8vw, 3.2rem)",
+              color: "oklch(0.95 0.04 320)",
+              letterSpacing: "-0.01em",
               textShadow:
-                "0 0 22px oklch(0.6 0.2 22 / 0.7), 0 0 44px oklch(0.45 0.16 18 / 0.45)",
+                "0 0 24px oklch(0.72 0.22 310 / 0.8), 0 0 48px oklch(0.55 0.18 300 / 0.5)",
               "--delay": "160ms",
+            } as React.CSSProperties
+          }
+        >
+          Happy Birthday baby
+        </h1>
+
+        {/* Italic name sub-heading — breath animation */}
+        <h2
+          className="slide-el playfair italic mb-4 breath-anim"
+          style={
+            {
+              fontSize: "clamp(1.3rem, 5vw, 1.9rem)",
+              color: "oklch(0.78 0.18 315)",
+              "--delay": "240ms",
             } as React.CSSProperties
           }
         >
           My Rasshu Gullaw 🌹
         </h2>
 
-        {/* Love message — floating breath */}
+        {/* Body — gentle float, same pattern as Women's Day hero */}
         <p
-          className="slide-el crimson-pro italic float-anim mb-3"
+          className="slide-el crimson-pro leading-relaxed mb-3 float-anim"
           style={
             {
-              fontSize: "clamp(1.1rem, 4.5vw, 1.5rem)",
-              color: "oklch(0.88 0.1 28)",
+              fontSize: "clamp(1rem, 4vw, 1.15rem)",
+              color: "oklch(0.85 0.05 320)",
+              maxWidth: 360,
+              lineHeight: 1.7,
+              "--delay": "320ms",
+            } as React.CSSProperties
+          }
+        >
+          This is a big day and I am the happiest person on this most important
+          day of your life I love you so much happy birthday love
+        </p>
+
+        {/* Love line — italic, slightly larger, floats */}
+        <p
+          className="slide-el crimson-pro italic float-anim mb-4"
+          style={
+            {
+              fontSize: "clamp(1.05rem, 4.5vw, 1.4rem)",
+              color: "oklch(0.9 0.1 330)",
               textShadow:
-                "0 0 16px oklch(0.6 0.2 22 / 0.65), 0 0 32px oklch(0.45 0.15 18 / 0.4)",
-              "--delay": "240ms",
+                "0 0 18px oklch(0.65 0.22 320 / 0.65), 0 0 36px oklch(0.5 0.18 310 / 0.35)",
+              "--delay": "400ms",
             } as React.CSSProperties
           }
         >
           I love youuuuu ❤️
         </p>
 
-        {/* Romantic emoji row */}
+        {/* Hearts row — staggered heartbeat */}
         <div
           className="slide-el flex gap-3"
           style={
             {
-              fontSize: "1.5rem",
-              "--delay": "320ms",
+              color: "oklch(0.68 0.22 320)",
+              fontSize: "1.4rem",
+              "--delay": "480ms",
             } as React.CSSProperties
           }
         >
@@ -1654,22 +1673,18 @@ function CountdownSlide({
   onBirthdayTrigger: () => void;
 }) {
   const targetDate = new Date("2026-03-11T00:00:00");
-  const timeLeft = useCountdown(targetDate);
+  const { timeLeft, expired } = useCountdown(targetDate, false);
   const triggered = useRef(false);
 
   useEffect(() => {
-    if (
-      !triggered.current &&
-      timeLeft.days === 0 &&
-      timeLeft.hours === 0 &&
-      timeLeft.minutes === 0 &&
-      timeLeft.seconds === 0 &&
-      new Date() >= targetDate
-    ) {
+    if (!triggered.current && expired) {
       triggered.current = true;
-      onBirthdayTrigger();
+      // Small delay so she sees 00:00:00:00 before the transition fires
+      setTimeout(() => {
+        onBirthdayTrigger();
+      }, 1500);
     }
-  }, [timeLeft, targetDate, onBirthdayTrigger]);
+  }, [expired, onBirthdayTrigger]);
 
   return (
     <div
@@ -1923,8 +1938,8 @@ const SLIDE_BG_COLORS = [
   "oklch(0.91 0.055 54)",
   // 4: countdown (near black)
   "oklch(0.08 0.015 10)",
-  // 5: birthday hero (deep rose-crimson — warm romantic blend)
-  "oklch(0.10 0.07 10)",
+  // 5: birthday hero (deep midnight plum — matches bdayHero palette)
+  "oklch(0.10 0.08 310)",
 ];
 
 // ===================== APP =====================
@@ -1963,6 +1978,15 @@ export default function App() {
     kind: "idle",
     current: getInitialSlide(),
   }));
+  // Mirror slideState into a ref so callbacks always read the latest value
+  const slideStateRef = useRef<SlideState>({
+    kind: "idle",
+    current: getInitialSlide(),
+  });
+  useEffect(() => {
+    slideStateRef.current = slideState;
+  }, [slideState]);
+
   const [activeKey, setActiveKey] = useState<number>(0);
   // Track the blended background color during transition
   const [bgOverlayColor, setBgOverlayColor] = useState<string | null>(null);
@@ -1971,6 +1995,19 @@ export default function App() {
   const [showBirthdayTransition, setShowBirthdayTransition] = useState(false);
   // Touch swipe tracking
   const touchStartX = useRef<number>(0);
+  const appContainerRef = useRef<HTMLDivElement>(null);
+
+  // Register non-passive touchmove listener so preventDefault actually works
+  // (React synthetic events are passive by default on modern browsers)
+  useEffect(() => {
+    const el = appContainerRef.current;
+    if (!el) return;
+    const handler = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    el.addEventListener("touchmove", handler, { passive: false });
+    return () => el.removeEventListener("touchmove", handler);
+  }, []);
   // Whether we're in "post March 8th viewed" mode — show replay button
   const [showReplayBtn, setShowReplayBtn] = useState(() => {
     if (isPastWomensDay()) {
@@ -1982,10 +2019,12 @@ export default function App() {
   const current =
     slideState.kind === "idle" ? slideState.current : slideState.current;
 
+  // Use ref-based state reads so this callback is always fresh even with empty deps
   const runTransitionTo = useCallback(
     (targetIndex: number) => {
-      if (slideState.kind === "animating") return;
-      const cur = slideState.current;
+      const ss = slideStateRef.current;
+      if (ss.kind === "animating") return;
+      const cur = ss.current;
       const next = targetIndex;
 
       setSlideState({
@@ -2020,22 +2059,29 @@ export default function App() {
         }, 80);
       }, 800);
     },
-    [slideState],
+    // Empty deps: always reads latest state via slideStateRef
+    [],
   );
 
   const goNext = useCallback(() => {
-    if (slideState.kind === "animating") return;
-    const cur = slideState.current;
-    const next = (cur + 1) % SLIDES;
+    const ss = slideStateRef.current;
+    if (ss.kind === "animating") return;
+    const cur = ss.current;
+    if (cur >= SLIDES - 1) return; // already on last page, do nothing
+    // Slide 4 is the countdown — never let a swipe skip to the birthday page (slide 5).
+    // The birthday page is only reachable via the BirthdayTransitionOverlay when the
+    // countdown genuinely expires on March 11th.
+    if (cur >= 4) return;
+    const next = cur + 1;
     // Mark as viewed once she moves past the secret intro page (on/after March 8th)
     if (cur === 0 && isPastWomensDay()) {
       localStorage.setItem(VIEWED_KEY, "true");
       setShowReplayBtn(true);
     }
     runTransitionTo(next);
-  }, [slideState, runTransitionTo]);
+  }, [runTransitionTo]);
 
-  const goTo = useCallback(
+  const _goTo = useCallback(
     (index: number) => {
       runTransitionTo(index);
     },
@@ -2079,12 +2125,14 @@ export default function App() {
   // Next button label for intro page
   return (
     <div
+      ref={appContainerRef}
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0].clientX;
       }}
       onTouchEnd={(e) => {
         const diff = touchStartX.current - e.changedTouches[0].clientX;
         if (diff > 50) goNext();
+        // Right swipe (diff < -50) intentionally does nothing
       }}
       style={{
         width: "100%",
@@ -2213,8 +2261,11 @@ export default function App() {
       {showBirthdayTransition && (
         <BirthdayTransitionOverlay
           onTransitionDone={() => {
+            // Snap directly to birthday slide (no slide-transition needed,
+            // the overlay already provided the visual bridge)
+            setSlideState({ kind: "idle", current: 5 });
+            setActiveKey((k) => k + 1);
             setShowBirthdayTransition(false);
-            goTo(5);
           }}
         />
       )}
