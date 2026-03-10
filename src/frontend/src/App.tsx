@@ -2257,6 +2257,31 @@ export default function App() {
         </button>
       )}
 
+      {/* TEMP: skip to birthday button — remove before sharing */}
+      {current === 4 && (
+        <button
+          type="button"
+          onClick={() => setShowBirthdayTransition(true)}
+          style={{
+            position: "absolute",
+            bottom: "2rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 30,
+            background: "oklch(0.14 0.05 15 / 0.75)",
+            border: "1px dashed oklch(0.5 0.1 22 / 0.7)",
+            borderRadius: 9999,
+            color: "oklch(0.65 0.14 28)",
+            fontSize: 11,
+            fontFamily: "monospace",
+            padding: "8px 18px",
+            backdropFilter: "blur(12px)",
+            cursor: "pointer",
+          }}
+        >
+          ⚠️ temp: trigger birthday
+        </button>
+      )}
       {/* Birthday transition overlay */}
       {showBirthdayTransition && (
         <BirthdayTransitionOverlay
